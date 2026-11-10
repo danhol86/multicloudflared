@@ -1,4 +1,5 @@
 $ErrorActionPreference='Stop'
+$OutputEncoding=[Text.UTF8Encoding]::new($false)
 $base=Split-Path $PSScriptRoot -Parent
 $exe=Join-Path $base 'publish\cloudflarednew.exe'
 $data=Join-Path $env:ProgramData ('CloudflaredNew-test-'+[guid]::NewGuid().ToString('N'))

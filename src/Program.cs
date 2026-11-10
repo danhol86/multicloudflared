@@ -42,8 +42,8 @@ static class App
                 case "add":
                     Require(args, 2, "add NAME [--token-stdin | --token-file PATH]");
                     string token;
-                    if (args.Contains("--token-stdin")) token = Console.In.ReadToEnd().Trim();
-                    else if (Array.IndexOf(args, "--token-file") is int i && i >= 0) token = File.ReadAllText(args[i + 1]).Trim();
+                    if (args.Contains("--token-stdin")) token = CleanToken(Console.In.ReadToEnd());
+                    else if (Array.IndexOf(args, "--token-file") is int i && i >= 0) token = CleanToken(File.ReadAllText(args[i + 1]));
                     else { Console.Write("Tunnel token (hidden): "); token = ReadSecret(); }
                     ValidateToken(token);
                     Modify(c => {
@@ -111,12 +111,13 @@ No tokens are placed in worker command lines. Service and console are exclusive.
 """);
     static void Require(string[] a, int count, string usage) { if (a.Length < count) throw new Exception("Usage: cloudflarednew " + usage); }
     static void CheckName(string n) { if (!Regex.IsMatch(n, @"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,47}$")) throw new Exception("Use 1–48 letters, numbers, hyphens or underscores for a name."); }
+    static string CleanToken(string value) => value.Trim().Trim('\uFEFF').Trim();
     static string ReadSecret()
     {
-        if (Console.IsInputRedirected) return Console.ReadLine()?.Trim() ?? "";
+        if (Console.IsInputRedirected) return CleanToken(Console.ReadLine() ?? "");
         var b = new StringBuilder();
         while (true) { var k = Console.ReadKey(true); if (k.Key == ConsoleKey.Enter) break; if (k.Key == ConsoleKey.Backspace) { if (b.Length > 0) b.Length--; } else if (!char.IsControl(k.KeyChar)) b.Append(k.KeyChar); }
-        Console.WriteLine(); return b.ToString().Trim();
+        Console.WriteLine(); return CleanToken(b.ToString());
     }
     public static void ValidateToken(string token)
     {
@@ -238,7 +239,7 @@ No tokens are placed in worker command lines. Service and console are exclusive.
         {
             bool upgrading = args[1] == "upgrade";
             if (args.Length > (upgrading ? 2 : 3)) throw new Exception("Usage: service install [TOKEN] | service upgrade");
-            string? installToken = args.Length == 3 ? args[2].Trim() : null;
+            string? installToken = args.Length == 3 ? CleanToken(args[2]) : null;
             if (installToken != null) ValidateToken(installToken);
             using (var serviceKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
                 @"SYSTEM\CurrentControlSet\Services\" + ServiceName))
