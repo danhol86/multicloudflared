@@ -27,7 +27,8 @@ try {
    $bytes=$encoding.GetPreamble()+$encoding.GetBytes($dummy)
    $proc.StandardInput.BaseStream.Write($bytes,0,$bytes.Length)
    $proc.StandardInput.BaseStream.Flush()
-   $proc.StandardInput.Close()
+   # Close the raw stream; disposing the unused writer can append its own BOM.
+   $proc.StandardInput.BaseStream.Close()
    $proc.WaitForExit()
    $code=$proc.ExitCode
    $proc.Dispose()
