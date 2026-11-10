@@ -1,5 +1,7 @@
 $ErrorActionPreference='Stop'
 $OutputEncoding=[Text.UTF8Encoding]::new($false)
+# Process.StandardInput uses Console.InputEncoding; avoid an implicit writer BOM before raw test bytes.
+[Console]::InputEncoding=[Text.UTF8Encoding]::new($false)
 $base=Split-Path $PSScriptRoot -Parent
 $exe=Join-Path $base 'publish\cloudflarednew.exe'
 $data=Join-Path $env:ProgramData ('CloudflaredNew-test-'+[guid]::NewGuid().ToString('N'))
