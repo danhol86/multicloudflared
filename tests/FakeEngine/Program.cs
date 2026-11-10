@@ -1,0 +1,1 @@
+Console.WriteLine("Registered tunnel connection (test fixture)"); Console.WriteLine(Environment.GetEnvironmentVariable("TUNNEL_TOKEN")); await Task.Delay(Timeout.Infinite);

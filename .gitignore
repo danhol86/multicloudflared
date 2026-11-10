@@ -1,0 +1,13 @@
+src/bin/
+src/obj/
+tests/FakeEngine/bin/
+tests/FakeEngine/obj/
+publish/
+dist/
+*.exe
+*.pdb
+*.log
+*.dpapi
+*.download
+tunnels.json
+status.json
