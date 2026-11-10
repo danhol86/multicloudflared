@@ -16,6 +16,25 @@ function Wait-For([scriptblock]$Condition,[string]$Description) {
 function State { if(Test-Path "$data\status.json"){Get-Content "$data\status.json" -Raw | ConvertFrom-Json} }
 try {
  $dummy=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('{"a":"test-account","t":"11111111-1111-1111-1111-111111111111","s":"test-secret"}'))
+ # Tokens are ASCII, but Windows shells can prefix UTF-8/UTF-16 BOMs.
+ foreach($encoding in @([Text.UTF8Encoding]::new($true),[Text.UnicodeEncoding]::new($false,$true))) {
+   $psi=New-Object Diagnostics.ProcessStartInfo
+   $psi.FileName=$exe
+   $psi.Arguments='add encoding-check --token-stdin --data "'+$data+'"'
+   $psi.UseShellExecute=$false
+   $psi.RedirectStandardInput=$true
+   $proc=[Diagnostics.Process]::Start($psi)
+   $bytes=$encoding.GetPreamble()+$encoding.GetBytes($dummy)
+   $proc.StandardInput.BaseStream.Write($bytes,0,$bytes.Length)
+   $proc.StandardInput.BaseStream.Flush()
+   $proc.StandardInput.Close()
+   $proc.WaitForExit()
+   $code=$proc.ExitCode
+   $proc.Dispose()
+   if($code){throw 'Encoded stdin token was rejected'}
+   Invoke-Cli @('remove','encoding-check')
+ }
+ Write-Output 'PASS: UTF-8 and UTF-16 BOM-prefixed tokens'
  foreach($name in @('alpha','beta')) { $dummy | & $exe add $name --token-stdin --data $data; if($LASTEXITCODE){throw 'add failed'} }
  Invoke-Cli @('engine', (Join-Path $base 'tests\FakeEngine\bin\Release\net10.0\FakeEngine.exe'))
  $manager=Start-Process $exe -ArgumentList @('run','--data',('"' + $data + '"')) -PassThru -WindowStyle Hidden

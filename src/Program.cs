@@ -42,7 +42,7 @@ static class App
                 case "add":
                     Require(args, 2, "add NAME [--token-stdin | --token-file PATH]");
                     string token;
-                    if (args.Contains("--token-stdin")) token = CleanToken(Console.In.ReadToEnd());
+                    if (args.Contains("--token-stdin")) token = ReadRedirectedToken();
                     else if (Array.IndexOf(args, "--token-file") is int i && i >= 0) token = CleanToken(File.ReadAllText(args[i + 1]));
                     else { Console.Write("Tunnel token (hidden): "); token = ReadSecret(); }
                     ValidateToken(token);
@@ -112,9 +112,14 @@ No tokens are placed in worker command lines. Service and console are exclusive.
     static void Require(string[] a, int count, string usage) { if (a.Length < count) throw new Exception("Usage: cloudflarednew " + usage); }
     static void CheckName(string n) { if (!Regex.IsMatch(n, @"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,47}$")) throw new Exception("Use 1–48 letters, numbers, hyphens or underscores for a name."); }
     static string CleanToken(string value) => value.Trim().Trim('\uFEFF').Trim();
+    static string ReadRedirectedToken()
+    {
+        using var reader = new StreamReader(Console.OpenStandardInput(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return CleanToken(reader.ReadToEnd());
+    }
     static string ReadSecret()
     {
-        if (Console.IsInputRedirected) return CleanToken(Console.ReadLine() ?? "");
+        if (Console.IsInputRedirected) return ReadRedirectedToken();
         var b = new StringBuilder();
         while (true) { var k = Console.ReadKey(true); if (k.Key == ConsoleKey.Enter) break; if (k.Key == ConsoleKey.Backspace) { if (b.Length > 0) b.Length--; } else if (!char.IsControl(k.KeyChar)) b.Append(k.KeyChar); }
         Console.WriteLine(); return CleanToken(b.ToString());
